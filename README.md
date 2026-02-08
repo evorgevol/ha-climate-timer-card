@@ -21,7 +21,9 @@ type: module
 
 ## Usage
 
+```
 type: custom:climate-timer-card
 entity: climate.living_room
 timer: timer.living_room_timer
 durations: [1,2,3]
+```
