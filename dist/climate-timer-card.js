@@ -67,9 +67,29 @@ class ClimateTimerCard extends LitElement {
     });
   }
 
+  async ensureTimerExists() {
+    if (this.hass.states[this.timerEntity]) return;
+
+    try {
+      await this.hass.callWS({
+        type: "helper/create",
+        helper_type: "timer",
+        name: this.timerEntity.split(".")[1],
+        entity_id: this.timerEntity,
+        duration: 0
+      });
+
+      console.log("Climate Timer Card: created timer", this.timerEntity);
+    } catch (e) {
+      console.warn("Climate Timer Card: could not auto-create timer", e);
+    }
+  }
+
   // auto off when timer finishes
   connectedCallback() {
     super.connectedCallback();
+
+    this.updateComplete.then(() => this.ensureTimerExists())
 
     window.addEventListener("hass-event", (e) => {
       if (
