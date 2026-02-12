@@ -57,6 +57,10 @@ class ClimateTimerCard extends LitElement {
         return this._timer()?.attributes?.finishes_at
     }
 
+    _duration() {
+        return this._timer()?.attributes?.duration
+    }
+
     _formatRemaining() {
         const finishesAt = this._finishesAt()
         if (!finishesAt) return ''
@@ -160,7 +164,8 @@ class ClimateTimerCard extends LitElement {
                         </div>
 
                         ${this.config.durations.map((h) => {
-                            const active = running
+                            const expectedDuration = `${h}:00:00`
+                            const active = running && this._duration() === expectedDuration
 
                             return html`
                                 <div class="btn ${active ? 'active' : ''}" @click=${() => this._startTimer(h)}>
