@@ -1,218 +1,247 @@
-import { LitElement, html, css } from "https://unpkg.com/lit@2.0.0/index.js?module";
+import { LitElement, html, css } from 'https://unpkg.com/lit@2.0.0/index.js?module'
 
 class ClimateTimerCard extends LitElement {
+    static properties = {
+        hass: {},
+        config: {},
+    }
 
-  static properties = {
-    hass: {},
-    config: {}
-  };
+    constructor() {
+        super()
+        this._updateInterval = null
+    }
 
-  setConfig(config) {
-    if (!config.entity) throw new Error("entity required");
-    if (!config.timer_entity) throw new Error("timer_entity required");
+    setConfig(config) {
+        if (!config.entity) throw new Error('entity required')
+        if (!config.timer) throw new Error('timer entity required')
 
-    this.config = {
-      durations: [1, 2, 3, 4],
-      ...config
-    };
-  }
+        this.config = {
+            durations: [1, 2, 3, 4],
+            ...config,
+        }
+    }
 
-  // ---------------- helpers ----------------
+    connectedCallback() {
+        super.connectedCallback()
+        // Update every second for live countdown
+        this._updateInterval = setInterval(() => this.requestUpdate(), 1000)
+    }
 
-  _climate() {
-    return this.hass.states[this.config.entity];
-  }
+    disconnectedCallback() {
+        super.disconnectedCallback()
+        if (this._updateInterval) {
+            clearInterval(this._updateInterval)
+            this._updateInterval = null
+        }
+    }
 
-  _timer() {
-    return this.hass.states[this.config.timer_entity];
-  }
+    // ---------------- helpers ----------------
 
-  _isOn() {
-    return this._climate()?.state !== "off";
-  }
+    _climate() {
+        return this.hass.states[this.config.entity]
+    }
 
-  _remaining() {
-    return this._timer()?.attributes?.remaining;
-  }
+    _timer() {
+        return this.hass.states[this.config.timer]
+    }
 
-  _remainingSeconds() {
-    const r = this._remaining();
-    if (!r) return 0;
+    _isOn() {
+        return this._climate()?.state !== 'off'
+    }
 
-    const [h, m, s] = r.split(":").map(Number);
-    return h * 3600 + m * 60 + s;
-  }
+    _isTimerRunning() {
+        return this._timer()?.state === 'active'
+    }
 
-  _tempColor() {
-    const s = this._climate()?.state;
-    if (s === "cool") return "blue";
-    if (s === "heat") return "red";
-    return "";
-  }
+    _finishesAt() {
+        return this._timer()?.attributes?.finishes_at
+    }
 
-  // ---------------- services ----------------
+    _formatRemaining() {
+        const finishesAt = this._finishesAt()
+        if (!finishesAt) return ''
 
-  _turnOn() {
-    this.hass.callService("climate", "turn_on", {
-      entity_id: this.config.entity
-    });
-  }
+        const now = new Date()
+        const endTime = new Date(finishesAt)
+        const diffSeconds = Math.max(0, Math.floor((endTime - now) / 1000))
 
-  _turnOff() {
-    this.hass.callService("climate", "turn_off", {
-      entity_id: this.config.entity
-    });
+        const hours = Math.floor(diffSeconds / 3600)
+        const minutes = Math.floor((diffSeconds % 3600) / 60)
+        const seconds = diffSeconds % 60
 
-    this.hass.callService("timer", "cancel", {
-      entity_id: this.config.timer_entity
-    });
-  }
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+    }
 
-  _startTimer(hours) {
-    this.hass.callService("timer", "start", {
-      entity_id: this.config.timer_entity,
-      duration: hours * 3600
-    });
-  }
+    _tempColor() {
+        const s = this._climate()?.state
+        if (s === 'cool') return 'blue'
+        if (s === 'heat') return 'red'
+        return ''
+    }
 
-  _setTemp(delta) {
-    const c = this._climate();
-    const newTemp = (c.attributes.temperature || 0) + delta;
+    // ---------------- services ----------------
 
-    this.hass.callService("climate", "set_temperature", {
-      entity_id: this.config.entity,
-      temperature: newTemp
-    });
-  }
+    _turnOn() {
+        this.hass.callService('climate', 'turn_on', {
+            entity_id: this.config.entity,
+        })
+    }
 
-  // ---------------- render ----------------
+    _turnOff() {
+        this.hass.callService('climate', 'turn_off', {
+            entity_id: this.config.entity,
+        })
 
-  render() {
-    const climate = this._climate();
-    if (!climate) return html`<ha-card>Entity not found</ha-card>`;
+        // Cancel timer if running
+        this.hass.callService('timer', 'cancel', {
+            entity_id: this.config.timer,
+        })
+    }
 
-    const isOn = this._isOn();
-    const timer = this._timer();
-    const running = timer?.state === "active";
-    const remaining = this._remaining();
-    const remainingSecs = this._remainingSeconds();
+    _startTimer(hours) {
+        // Turn on climate
+        this._turnOn()
 
-    const current = climate.attributes.current_temperature ?? "--";
-    const target = climate.attributes.temperature ?? "--";
+        // Start the timer
+        this.hass.callService('timer', 'start', {
+            entity_id: this.config.timer,
+            duration: hours * 3600,
+        })
+    }
 
-    return html`
-      <ha-card>
-        <div class="wrapper">
+    _setTemp(delta) {
+        const c = this._climate()
+        const newTemp = (c.attributes.temperature || 0) + delta
 
-          <div class="current ${this._tempColor()}">
-            <ha-icon icon="mdi:thermometer"></ha-icon>
-            ${current}°
-          </div>
+        this.hass.callService('climate', 'set_temperature', {
+            entity_id: this.config.entity,
+            temperature: newTemp,
+        })
+    }
 
-          <div class="target-row">
-            <div class="pm" @click=${() => this._setTemp(-1)}>−</div>
+    // ---------------- render ----------------
 
-            <div class="target">
-              ${`${target}°`}
-            </div>
+    render() {
+        const climate = this._climate()
+        if (!climate) return html`<ha-card>Entity not found</ha-card>`
 
-            <div class="pm" @click=${() => this._setTemp(1)}>+</div>
-          </div>
+        const isOn = this._isOn()
+        const running = this._isTimerRunning()
+        const remaining = this._formatRemaining()
 
-          ${running
-            ? html`<div class="timer-text">⏱ ${remaining}</div>`
-            : ""}
+        const current = climate.attributes.current_temperature ?? '--'
+        const target = climate.attributes.temperature ?? '--'
 
-          <div class="bottom">
+        return html`
+            <ha-card>
+                <div class="wrapper">
+                    <div class="current ${this._tempColor()}">
+                        <ha-icon icon="mdi:thermometer"></ha-icon>
+                        ${current}°
+                    </div>
 
-            <div class="btn icon ${!isOn ? "active" : ""}" @click=${() => this._turnOff()}>
-              <ha-icon icon="mdi:power"></ha-icon>
-            </div>
+                    <div class="target-row">
+                        <div class="pm" @click=${() => this._setTemp(-1)}>−</div>
 
-            <div class="btn icon ${isOn && !running ? "active" : ""}" @click=${() => this._turnOn()}>
-              <ha-icon icon="mdi:snowflake"></ha-icon>
-            </div>
+                        <div class="target">${`${target}°`}</div>
 
-            ${this.config.durations.map(h => {
-              const active = running && remainingSecs === h * 3600;
+                        <div class="pm" @click=${() => this._setTemp(1)}>+</div>
+                    </div>
 
-              return html`
-                <div class="btn ${active ? "active" : ""}" @click=${() => this._startTimer(h)}>
-                  ${h}
+                    ${running ? html`<div class="timer-text">⏱ ${remaining}</div>` : ''}
+
+                    <div class="bottom">
+                        <div class="btn icon ${!isOn ? 'active' : ''}" @click=${() => this._turnOff()}>
+                            <ha-icon icon="mdi:power"></ha-icon>
+                        </div>
+
+                        <div class="btn icon ${isOn && !running ? 'active' : ''}" @click=${() => this._turnOn()}>
+                            <ha-icon icon="mdi:snowflake"></ha-icon>
+                        </div>
+
+                        ${this.config.durations.map((h) => {
+                            const active = running
+
+                            return html`
+                                <div class="btn ${active ? 'active' : ''}" @click=${() => this._startTimer(h)}>
+                                    ${h}
+                                </div>
+                            `
+                        })}
+                    </div>
                 </div>
-              `;
-            })}
-          </div>
-
-        </div>
-      </ha-card>
-    `;
-  }
-
-  // ---------------- styles ----------------
-
-  static styles = css`
-    ha-card {
-      padding: 16px;
-      text-align: center;
+            </ha-card>
+        `
     }
 
-    .current {
-      font-size: 14px;
-      opacity: 0.7;
-      margin-bottom: 6px;
-      display: flex;
-      justify-content: center;
-      gap: 6px;
-      align-items: center;
-    }
+    // ---------------- styles ----------------
 
-    .current.blue { color: #3fa9ff; }
-    .current.red { color: #ff5a5a; }
+    static styles = css`
+        ha-card {
+            padding: 16px;
+            text-align: center;
+        }
 
-    .target-row {
-      display: flex;
-      justify-content: center;
-      gap: 22px;
-      margin: 14px 0;
-      align-items: center;
-    }
+        .current {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            align-items: center;
+        }
 
-    .target {
-      font-size: 36px;
-      min-width: 90px;
-    }
+        .current.blue {
+            color: #3fa9ff;
+        }
+        .current.red {
+            color: #ff5a5a;
+        }
 
-    .pm {
-      font-size: 26px;
-      cursor: pointer;
-      user-select: none;
-    }
+        .target-row {
+            display: flex;
+            justify-content: center;
+            gap: 22px;
+            margin: 14px 0;
+            align-items: center;
+        }
 
-    .bottom {
-      display: flex;
-      justify-content: space-around;
-      gap: 8px;
-    }
+        .target {
+            font-size: 36px;
+            min-width: 90px;
+        }
 
-    .btn {
-      padding: 6px 10px;
-      border-radius: 10px;
-      opacity: 0.5;
-      cursor: pointer;
-      width: 100%;
-    }
+        .pm {
+            font-size: 26px;
+            cursor: pointer;
+            user-select: none;
+        }
 
-    .timer-text {
-      padding-bottom: 20px;
-    }
+        .bottom {
+            display: flex;
+            justify-content: space-around;
+            gap: 8px;
+        }
 
-    .btn.active {
-      opacity: 1;
-      background: var(--primary-color);
-      color: white;
-    }
-  `;
+        .btn {
+            padding: 6px 10px;
+            border-radius: 10px;
+            opacity: 0.5;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .timer-text {
+            padding-bottom: 20px;
+        }
+
+        .btn.active {
+            opacity: 1;
+            background: var(--primary-color);
+            color: white;
+        }
+    `
 }
 
-customElements.define("climate-timer-card", ClimateTimerCard);
+customElements.define('climate-timer-card', ClimateTimerCard)
