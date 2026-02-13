@@ -152,10 +152,10 @@ class ClimateTimerCard extends LitElement {
                         <div class="pm" @click=${() => this._setTemp(1)}>+</div>
                     </div>
 
-                    ${running ? html`<div class="timer-text">⏱ ${remaining}</div>` : ''}
+                    <div class="timer-text">${running ? `⏱ ${remaining}` : html`&nbsp;`}</div>
 
                     <div class="bottom">
-                        <div class="btn icon ${!isOn ? 'active' : ''}" @click=${() => this._turnOff()}>
+                        <div class="btn icon off ${!isOn ? 'active' : ''}" @click=${() => this._turnOff()}>
                             <ha-icon icon="mdi:power"></ha-icon>
                         </div>
 
@@ -245,6 +245,12 @@ class ClimateTimerCard extends LitElement {
             opacity: 1;
             background: var(--primary-color);
             color: white;
+        }
+
+        .btn.off.active {
+            background: var(--control-select-color, rgba(128, 128, 128, 0.2));
+            fill: var(--icon-primary-color, currentcolor);
+            color: var(--primary-text-color);
         }
     `
 }
