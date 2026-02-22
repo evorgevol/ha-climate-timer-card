@@ -248,8 +248,8 @@ class ClimateTimerCard extends LitElement {
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 0px;
-            height: 0px;
+            width: 0;
+            height: 0;
             border-radius: 50%;
             z-index: -1;
             transition: box-shadow 0.3s ease;
