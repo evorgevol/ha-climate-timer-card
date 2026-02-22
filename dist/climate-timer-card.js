@@ -154,15 +154,17 @@ class ClimateTimerCard extends LitElement {
                         ${current}°
                     </div>
 
-                    <div class="target-row">
-                        <div class="pm" @click=${() => this._setTemp(-1)}>−</div>
+                    <div class="middle-section ${!running ? 'centered' : ''}">
+                        <div class="target-row">
+                            <div class="pm" @click=${() => this._setTemp(-1)}>−</div>
 
-                        <div class="target">${`${target}°`}</div>
+                            <div class="target ${this._tempColor()}">${`${target}°`}</div>
 
-                        <div class="pm" @click=${() => this._setTemp(1)}>+</div>
+                            <div class="pm" @click=${() => this._setTemp(1)}>+</div>
+                        </div>
+
+                        <div class="timer-text">${running ? `⏱ ${remaining}` : html`&nbsp;`}</div>
                     </div>
-
-                    <div class="timer-text">${running ? `⏱ ${remaining}` : html`&nbsp;`}</div>
 
                     <div class="bottom">
                         <div class="btn icon off ${!isOn ? 'active' : ''}" @click=${() => this._turnOff()}>
@@ -214,17 +216,55 @@ class ClimateTimerCard extends LitElement {
             color: #ff5a5a;
         }
 
+        .middle-section {
+            display: flex;
+            flex-direction: column;
+            min-height: 120px;
+            justify-content: flex-start;
+        }
+
+        .middle-section.centered {
+            justify-content: center;
+        }
+
         .target-row {
             display: flex;
             justify-content: center;
             gap: 22px;
-            margin: 14px 0;
             align-items: center;
         }
 
         .target {
             font-size: 36px;
             min-width: 90px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .target.blue::before,
+        .target.red::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0px;
+            height: 0px;
+            border-radius: 50%;
+            z-index: -1;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .target.blue::before {
+            box-shadow: 0 0 80px 40px rgba(63, 169, 255, 0.3),
+                        0 0 60px 30px rgba(63, 169, 255, 0.2),
+                        0 0 40px 20px rgba(63, 169, 255, 0.15);
+        }
+
+        .target.red::before {
+            box-shadow: 0 0 80px 40px rgba(255, 90, 90, 0.3),
+                        0 0 60px 30px rgba(255, 90, 90, 0.2),
+                        0 0 40px 20px rgba(255, 90, 90, 0.15);
         }
 
         .pm {
@@ -248,7 +288,8 @@ class ClimateTimerCard extends LitElement {
         }
 
         .timer-text {
-            padding-bottom: 20px;
+            margin-top: 14px;
+            min-height: 24px;
         }
 
         .btn.active {
