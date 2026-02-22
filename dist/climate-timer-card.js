@@ -86,9 +86,19 @@ class ClimateTimerCard extends LitElement {
     // ---------------- services ----------------
 
     _turnOn() {
+        const isOn = this._isOn()
+        if (isOn) {
+          // Cancel timer if running
+          this.hass.callService('timer', 'cancel', {
+              entity_id: this.config.timer,
+          })
+        }
+      
         this.hass.callService('climate', 'turn_on', {
             entity_id: this.config.entity,
         })
+
+        
     }
 
     _turnOff() {
@@ -243,7 +253,7 @@ class ClimateTimerCard extends LitElement {
 
         .btn.active {
             opacity: 1;
-            background: var(--primary-color);
+            background: var(--control-select-color, rgb(33, 150, 243));
             color: white;
         }
 
