@@ -1,3 +1,29 @@
+# Home Assistant Cards
+
+Two custom Lovelace cards in one repository:
+
+- **[Climate Timer Card](#climate-timer-card)** – climate controls with a countdown timer, auto-off and duration presets
+- **[Media Player Card](#media-player-card)** – a fully responsive `media_player` card
+
+## Installation
+
+### HACS
+
+Frontend → Add custom repository → URL → type: Dashboard
+
+HACS adds a single resource, `/hacsfiles/ha-climate-timer-card/cards.js`, which registers **both** cards.
+
+### Manual
+
+Copy the whole `dist/` folder into `/config/www/ha-cards/` and add one resource:
+
+/local/ha-cards/cards.js
+type: module
+
+`cards.js` imports the individual card files, so one resource is all you need.
+
+---
+
 # Climate Timer Card
 
 A custom Lovelace card that combines:
@@ -6,20 +32,6 @@ A custom Lovelace card that combines:
 • Countdown timer
 • Auto-off
 • Duration presets
-
-## Installation
-
-### HACS
-
-Frontend → Add custom repository → URL → type: Dashboard
-
-### Manual
-
-Copy `dist/climate-timer-card.js` into `/config/www/`
-and add:
-
-/local/climate-timer-card.js
-type: module
 
 ## Setup
 
@@ -82,3 +94,27 @@ When you press a duration button:
 3. When timer finishes, automation triggers and turns off the climate
 
 **Timers run server-side in Home Assistant**, so they survive reboots, page refreshes, and work even when the card isn't visible! Each card has its own timer, so multiple devices can have independent timers running simultaneously.
+
+---
+
+# Media Player Card
+
+A responsive Lovelace card for `media_player` entities. It fills whatever space the layout gives it and switches between a landscape and a portrait arrangement based on the card's own dimensions.
+
+- **Landscape** – artwork on the left (max 50% width / 100% height), title + artist left-aligned on the right, centred transport controls, progress bar below.
+- **Portrait** – artwork on top (max 100% width / 50% height), centred title, controls and progress below.
+
+Artwork always keeps its aspect ratio.
+
+## Usage
+
+```yaml
+type: custom:media-player-card
+entity: media_player.living_room
+```
+
+**Configuration:**
+
+- `entity` (required): Your `media_player` entity ID
+
+Previous / play-pause / next buttons are dimmed automatically when the entity does not report support for them. The progress bar is only shown when the entity reports a media duration.

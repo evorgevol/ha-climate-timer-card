@@ -1,6 +1,6 @@
 {
-  "name": "Climate Timer Card",
+  "name": "Climate Timer & Media Player Cards",
   "content_in_root": false,
-  "filename": "dist/climate-timer-card.js",
+  "filename": "cards.js",
   "render_readme": true
 }
