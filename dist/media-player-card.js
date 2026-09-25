@@ -6,11 +6,22 @@ const SUPPORT_PREVIOUS_TRACK = 16
 const SUPPORT_NEXT_TRACK = 32
 const SUPPORT_PLAY = 16384
 
+const EDITOR_SCHEMA = [{ name: 'entity', required: true, selector: { entity: { domain: 'media_player' } } }]
+
 class MediaPlayerCard extends LitElement {
     static properties = {
         hass: {},
         config: {},
         _orientation: { state: true },
+    }
+
+    static getConfigElement() {
+        return document.createElement('media-player-card-editor')
+    }
+
+    static getStubConfig(hass) {
+        const entity = Object.keys(hass?.states || {}).find((id) => id.startsWith('media_player.'))
+        return { entity: entity || '' }
     }
 
     constructor() {
@@ -28,6 +39,16 @@ class MediaPlayerCard extends LitElement {
 
     getCardSize() {
         return 4
+    }
+
+    // Declares full resize support in the sections layout editor
+    getGridOptions() {
+        return {
+            rows: 3,
+            columns: 12,
+            min_rows: 2,
+            min_columns: 3,
+        }
     }
 
     connectedCallback() {
@@ -351,6 +372,11 @@ class MediaPlayerCard extends LitElement {
             text-align: left;
         }
 
+        .wrapper.landscape .info {
+            justify-content: space-between;
+            gap: 8px;
+        }
+
         /* ---- portrait ---- */
 
         .wrapper.portrait {
@@ -379,11 +405,52 @@ class MediaPlayerCard extends LitElement {
     `
 }
 
+class MediaPlayerCardEditor extends LitElement {
+    static properties = {
+        hass: {},
+        _config: { state: true },
+    }
+
+    setConfig(config) {
+        this._config = config
+    }
+
+    _computeLabel(schema) {
+        return schema.name === 'entity' ? 'Media player entity' : schema.name
+    }
+
+    _valueChanged(ev) {
+        this.dispatchEvent(
+            new CustomEvent('config-changed', {
+                detail: { config: ev.detail.value },
+                bubbles: true,
+                composed: true,
+            }),
+        )
+    }
+
+    render() {
+        if (!this.hass || !this._config) return html``
+
+        return html`
+            <ha-form
+                .hass=${this.hass}
+                .data=${this._config}
+                .schema=${EDITOR_SCHEMA}
+                .computeLabel=${this._computeLabel}
+                @value-changed=${this._valueChanged}
+            ></ha-form>
+        `
+    }
+}
+
 customElements.define('media-player-card', MediaPlayerCard)
+customElements.define('media-player-card-editor', MediaPlayerCardEditor)
 
 window.customCards = window.customCards || []
 window.customCards.push({
     type: 'media-player-card',
     name: 'Media Player Card',
     description: 'A responsive media player card with artwork, transport controls and progress.',
+    preview: true,
 })

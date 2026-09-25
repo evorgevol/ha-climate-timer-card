@@ -108,6 +108,8 @@ Artwork always keeps its aspect ratio.
 
 ## Usage
 
+Pick **Media Player Card** from the dashboard's "Add card" dialog and choose an entity in the visual editor, or add it in YAML:
+
 ```yaml
 type: custom:media-player-card
 entity: media_player.living_room
