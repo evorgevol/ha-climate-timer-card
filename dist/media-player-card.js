@@ -244,9 +244,11 @@ class MediaPlayerCard extends LitElement {
         .wrapper {
             display: flex;
             height: 100%;
-            gap: 12px;
+            gap: 15px;
             min-width: 0;
             min-height: 0;
+            padding: 5px;
+            box-sizing: border-box;
         }
 
         .art {
@@ -288,12 +290,13 @@ class MediaPlayerCard extends LitElement {
             flex: 1 1 auto;
             min-width: 0;
             min-height: 0;
+            padding: 0 20px;
         }
 
         .title {
-            font-size: var(--ha-card-header-font-size, 1.1rem);
+            font-size: var(--ha-card-header-font-size, 1.5rem);
             font-weight: 600;
-            line-height: 1.2;
+            line-height: 1.5;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
