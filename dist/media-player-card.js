@@ -174,7 +174,7 @@ class MediaPlayerCard extends LitElement {
                     <div class="info">
                         <div class="text">
                             <div class="title">${this._title()}</div>
-                            ${artist ? html`<div class="artist">${artist}</div>` : ''}
+                            <div class="artist ${artist ? '' : 'hidden'}">${artist || html`&nbsp;`}</div>
                         </div>
 
                         <div class="controls">
@@ -206,19 +206,15 @@ class MediaPlayerCard extends LitElement {
                             </ha-icon-button>
                         </div>
 
-                        ${progress
-                            ? html`
-                                  <div class="progress">
-                                      <div class="bar">
-                                          <div class="fill" style=${`width:${progress.percent}%`}></div>
-                                      </div>
-                                      <div class="times">
-                                          <span>${this._formatTime(progress.position)}</span>
-                                          <span>${this._formatTime(progress.duration)}</span>
-                                      </div>
-                                  </div>
-                              `
-                            : ''}
+                        <div class="progress ${progress ? '' : 'hidden'}">
+                            <div class="bar">
+                                <div class="fill" style=${`width:${progress ? progress.percent : 0}%`}></div>
+                            </div>
+                            <div class="times">
+                                <span>${this._formatTime(progress ? progress.position : 0)}</span>
+                                <span>${this._formatTime(progress ? progress.duration : 0)}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </ha-card>
@@ -323,8 +319,11 @@ class MediaPlayerCard extends LitElement {
         }
 
         .controls .disabled {
-            opacity: 0.3;
-            pointer-events: none;
+            visibility: hidden;
+        }
+
+        .hidden {
+            visibility: hidden;
         }
 
         .progress {
@@ -361,6 +360,7 @@ class MediaPlayerCard extends LitElement {
         .wrapper.landscape .art {
             flex: 0 0 auto;
             height: 100%;
+            min-width: 30%;
             max-width: 50%;
         }
 
@@ -390,6 +390,7 @@ class MediaPlayerCard extends LitElement {
             flex: 0 0 auto;
             width: 100%;
             height: 50%;
+            min-height: 30%;
         }
 
         .wrapper.portrait .art img {
